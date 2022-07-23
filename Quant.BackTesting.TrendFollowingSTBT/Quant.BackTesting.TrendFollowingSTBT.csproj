@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quant.BackTesting.Model\Quant.BackTesting.Model.csproj" />
+    <ProjectReference Include="..\Quant.BackTesting.Service\Quant.BackTesting.Service.csproj" />
+  </ItemGroup>
+
+</Project>

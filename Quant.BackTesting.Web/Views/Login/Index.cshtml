@@ -1,0 +1,40 @@
+﻿@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+    string url = ViewBag.Url;
+}
+
+<style>
+    body, html {
+        background-image: url('https://i.imgur.com/xhiRfL6.jpg');
+        height: 100%;
+    }
+
+    #profile-img {
+        height: 180px;
+    }
+
+    .h-80 {
+        height: 80% !important;
+    }
+</style>
+
+
+<!------ Include the above in your HEAD tag ---------->
+<link href="~/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+<script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+<div class="container h-80">
+    <div class="row align-items-center h-100">
+        <div class="col-3 mx-auto">
+            <div class="text-center">
+                <img id="profile-img" class="rounded-circle profile-img-card" src="~/Images/Logo.png" />
+                <p id="profile-name" class="profile-name-card"></p>
+
+                <a class="btn btn-primary btn-block btn-signin" href="@url">
+                    Login
+                </a>
+
+            </div>
+        </div>
+    </div>
+</div>
