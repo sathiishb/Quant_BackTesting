@@ -75,7 +75,7 @@ namespace Quant.BackTesting.Web
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=FTG}/{action=Index}/{id?}");
+                    pattern: "{controller=Login}/{action=Index}/{id?}");
             });
         }
     }

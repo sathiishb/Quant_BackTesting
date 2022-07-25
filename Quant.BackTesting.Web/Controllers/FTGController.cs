@@ -39,8 +39,8 @@ namespace Quant.BackTesting.Web.Controllers
 
         public IActionResult Index()
         {
-            var backTestStartDate = new DateTime(2018, 01, 01);
-            var backTestEndDate = new DateTime(2022, 06, 30);
+            var backTestStartDate = new DateTime(2022, 07, 22);
+            var backTestEndDate = new DateTime(2022, 07, 25);
 
             //var backTestStartDate = DateTime.Now.AddDays(-1);
             //var backTestEndDate = DateTime.Now;
@@ -49,10 +49,10 @@ namespace Quant.BackTesting.Web.Controllers
             var fileName = backTestStartDate.ToString("MMM_yyyy") + " to " + backTestEndDate.ToString("MMM_yyyy") + $" EndTime {endTime.Hours}_{endTime.Minutes} PreDay{previousDayCheck.Hours}_{previousDayCheck.Minutes}";
 
 
-             var data = _historicalStockData.GetFnoStockData(backTestStartDate, backTestEndDate);
-            //var token = HttpContext.Session.GetProfile().AccessToken;
-            //var stocks = FutureAndOptionBasket.GetStockName(backTestStartDate.Year);
-            //var data = _historicalDataPuller.GetHistoricalData(token, backTestStartDate, backTestEndDate, "5", stocks);
+            // var data = _historicalStockData.GetFnoStockData(backTestStartDate, backTestEndDate);
+            var token = HttpContext.Session.GetProfile().AccessToken;
+            var stocks = FutureAndOptionBasket.GetStockName(backTestStartDate.Year);
+            var data = _historicalDataPuller.GetHistoricalData(token, backTestStartDate, backTestEndDate, "5", stocks);
             var ftg = _fadeTheGapFlowClass.GetStrategyPnl(data, endTime, previousDayCheck);
             //var ftg = _trendFollowingFlowClass.GetStrategyPnl(data, endTime, previousDayCheck);
 

@@ -31,40 +31,46 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
 
             var fTGModel = new List<FTGModel>();
             var pnls = new List<ReportModel>();
+            var previousDate = DateTime.Now;
 
-            foreach (var currentDay in groupByDate)
+            foreach (var currentDate in groupByDate)
             {
                 //Not looping the first date
-                if (currentDay.Key == groupByDate.FirstOrDefault().Key) continue;
+                if (currentDate.Key == groupByDate.FirstOrDefault().Key)
+                {
+                    previousDate = currentDate.Key;
+                    continue;
+                }
 
                 try
                 {
-                    var symbols = currentDay.GroupBy(s => s.Symbol).ToList();
+                    var symbols = currentDate.GroupBy(s => s.Symbol).ToList();
                     foreach (var item in symbols)
                     {
-                        var currentDate = currentDay.Key;
-                        var entryDay = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == new TimeSpan(09, 15, 00)
+                        var currentDay = currentDate.Key;
+                        var openPrice = currentDate.FirstOrDefault(s => s.Date.TimeOfDay == new TimeSpan(09, 15, 00)
                             && s.Symbol == item.Key)?.Open;
 
-                        var previousDay = groupByDate.FirstOrDefault(s => s.Key == currentDate.AddDays(-1));
+                        var previousDay = groupByDate.FirstOrDefault(s => s.Key == previousDate);
                         double? previousDayClose = previousDay.FirstOrDefault(s => s.Date.TimeOfDay == previousDayCheck && s.Symbol == item.Key)?.Close;
 
 
-                        if (entryDay.HasValue == false || previousDayClose.HasValue == false || previousDayClose.Value < 50) continue;
+                       // if (openPrice.HasValue == false || previousDayClose.HasValue == false || previousDayClose.Value < 40) continue;
+                        if (previousDayClose.Value < 40) continue;
 
 
-                        var change = entryDay.Value - previousDayClose.Value;
+                        var change = openPrice.Value - previousDayClose.Value;
                         var changeInPercentage = Math.Abs((change / previousDayClose.Value) * 100);
 
 
                         fTGModel.Add(new FTGModel()
                         {
                             ChangePercentage = changeInPercentage,
-                            DateTime = currentDate,
+                            DateTime = currentDay,
                             Symbol = item.Key,
                             Change = change,
-                            Entry=entryDay.Value,
-                            PreviousClose=previousDayClose.Value
+                            Entry = openPrice.Value,
+                            PreviousClose = previousDayClose.Value
                         });
                     }
 
@@ -72,6 +78,7 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
 
                 }
                 catch (Exception) { }
+                previousDate = currentDate.Key;
             }
 
             var result = fTGModel.Where(s => s.ChangePercentage >= 2)
@@ -94,7 +101,7 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
 
 
 
-                    if (exitTimePrice.HasValue == false || entryPrice.HasValue==false) continue;
+                    if (exitTimePrice.HasValue == false || entryPrice.HasValue == false) continue;
 
                     var bullish = top.Change > 0;
                     var qty = Math.Round(investment / entryPrice.Value);
