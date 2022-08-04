@@ -18,24 +18,22 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
             _historicalDataPuller = historicalDataPuller;
         }
 
-        public List<ReportModel> GetStrategyPnl(List<HistoricalDataModel> data, TimeSpan endTime,
+        public List<ReportModel> GetGapUpStocks(List<HistoricalDataModel> data, TimeSpan endTime,
             TimeSpan previousDayCheck)
         {
-
-
             var investment = 80000;
-            var entryTime = new TimeSpan(09, 30, 00);
-            var groupByDate = data
+            //var entryTime = new TimeSpan(09, 30, 00);
+            var historicalDataByDate = data
               .GroupBy(s => s.Date.Date).ToList();
 
 
             var fTGModel = new List<FTGModel>();
-            var pnls = new List<ReportModel>();
 
-            foreach (var currentDay in groupByDate)
+
+            foreach (var currentDay in historicalDataByDate)
             {
                 //Not looping the first date
-                if (currentDay.Key == groupByDate.FirstOrDefault().Key) continue;
+                if (currentDay.Key == historicalDataByDate.FirstOrDefault().Key) continue;
 
                 try
                 {
@@ -43,10 +41,10 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
                     foreach (var item in symbols)
                     {
                         var currentDate = currentDay.Key;
-                        var entryDay = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == entryTime
+                        var entryDay = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == new TimeSpan(9,15,0)
                             && s.Symbol == item.Key)?.Open;
 
-                        var previousDay = groupByDate.FirstOrDefault(s => s.Key == currentDate.AddDays(-1));
+                        var previousDay = historicalDataByDate.FirstOrDefault(s => s.Key == currentDate.AddDays(-1));
                         double? previousDayClose = previousDay.FirstOrDefault(s => s.Date.TimeOfDay == previousDayCheck && s.Symbol == item.Key)?.Close;
 
 
@@ -72,11 +70,22 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
                 catch (Exception) { }
             }
 
-            var result = fTGModel.Where(s => s.ChangePercentage >= 3)
+            var gapUpStocks = fTGModel.Where(s => s.ChangePercentage >= 2)
                 .GroupBy(s => s.DateTime)
                 .ToList();
 
-            foreach (var item in result)
+            return ApplyStrategy(endTime, investment, historicalDataByDate, gapUpStocks);
+
+
+
+        }
+
+        public List<ReportModel> ApplyStrategy(TimeSpan endTime, int investment,
+            List<IGrouping<DateTime, HistoricalDataModel>> historicalData,
+            List<IGrouping<DateTime, FTGModel>> GapUpStocks)
+        {
+            var pnls = new List<ReportModel>();
+            foreach (var item in GapUpStocks)
             {
 
                 var topFive = item.OrderByDescending(s => s.ChangePercentage)
@@ -84,58 +93,71 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
 
                 foreach (var top in topFive)
                 {
-                    var currentDay = groupByDate.FirstOrDefault(s => s.Key.Date == top.DateTime.Date)
+                    var currentDay = historicalData.FirstOrDefault(s => s.Key.Date == top.DateTime.Date)
                          .Where(x => x.Symbol == top.Symbol)
                          .ToList();
-                    var entryPrice = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == entryTime).Open;
-                    var exitTimePrice = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == endTime)?.Close;
-
-
-
-                    if (exitTimePrice.HasValue == false) continue;
-
                     var bullish = top.Change > 0;
-                    var qty = Math.Round(investment / entryPrice);
+                    var openPrice = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == new TimeSpan(9, 15, 0)).Open;
+                    var LimitPrice = bullish ? openPrice * 0.99 : openPrice * 1.01;
+                    var exitByEodPrice = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == endTime).Close;
+
+                    double entryPrice = 0;
+                    double Sl = 0;
+                    double exitPrice = 0;
+                    int qty = 0;
+
+                    // if (exitTimePrice.HasValue == false) continue;
+
+
+                 
                     if (bullish == false)
                     {
-                        var Sl = entryPrice * 1.02;
-                        double exitPrice = 0;
-
                         foreach (var fiveMinuteData in currentDay)
                         {
-                            if (fiveMinuteData.High >= Sl)
+                            if (entryPrice == 0 && fiveMinuteData.High >= LimitPrice)
+                            {
+                                entryPrice = LimitPrice;
+                                Sl = entryPrice * 1.015;
+                                qty = int.Parse(Math.Round(investment / entryPrice).ToString());
+                            }
+                            if (entryPrice != 0 && fiveMinuteData.High >= Sl)
                             {
                                 exitPrice = Sl;
                                 break;
                             }
                         }
-                        exitPrice = exitPrice == 0 ? exitTimePrice.Value : exitPrice;
+                        exitPrice = exitPrice == 0 ? exitByEodPrice : exitPrice;
                         pnls.Add(new ReportModel()
                         {
                             DateTime = currentDay.First().Date,
                             IsBullish = true,
-                            PNL = qty * (entryPrice - exitPrice),
+                            PNL = qty * (LimitPrice - exitPrice),
                             Symbol = top.Symbol
                         });
                     }
                     else
                     {
-                        var Sl = entryPrice * 0.98;
-                        double exitPrice = 0;
+                       
                         foreach (var fiveMinuteData in currentDay)
                         {
-                            if (fiveMinuteData.Low <= Sl)
+                            if (entryPrice == 0 && fiveMinuteData.Low <= LimitPrice)
+                            {
+                                entryPrice = LimitPrice;
+                                Sl = entryPrice * 0.985;
+                                qty = int.Parse(Math.Round(investment / entryPrice).ToString());
+                            }
+                            if (entryPrice != 0 && fiveMinuteData.Low <= Sl)
                             {
                                 exitPrice = Sl;
                                 break;
                             }
                         }
-                        exitPrice = exitPrice == 0 ? exitTimePrice.Value : exitPrice;
+                        exitPrice = exitPrice == 0 ? exitByEodPrice : exitPrice;
                         pnls.Add(new ReportModel()
                         {
                             DateTime = currentDay.First().Date,
                             IsBullish = false,
-                            PNL = qty * (exitPrice - entryPrice),
+                            PNL = qty * (exitPrice - LimitPrice),
                             Symbol = top.Symbol
                         });
                     }
@@ -143,12 +165,8 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
                 }
 
             }
-
             return pnls;
-
         }
-
-
     }
 
     //public class FTGModel

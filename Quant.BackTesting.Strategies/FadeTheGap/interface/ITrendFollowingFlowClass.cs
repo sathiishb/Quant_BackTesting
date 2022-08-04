@@ -7,6 +7,6 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.Interface
 {
     public interface ITrendFollowingFlowClass
     {
-        List<ReportModel> GetStrategyPnl(List<HistoricalDataModel> data, TimeSpan endTime, TimeSpan previousDayCheck);
+        List<ReportModel> GetGapUpStocks(List<HistoricalDataModel> data, TimeSpan endTime, TimeSpan previousDayCheck);
     }
 }

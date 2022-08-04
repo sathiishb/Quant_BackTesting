@@ -19,12 +19,13 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
         }
 
         public List<ReportModel> GetStrategyPnl(List<HistoricalDataModel> data, TimeSpan endTime,
-            TimeSpan previousDayCheck)
+            TimeSpan previousDayCheck,
+            string token)
         {
 
 
             var investment = 80000;
-            var entryTime = new TimeSpan(09, 15, 00);
+            var entryTime = new TimeSpan(09, 16, 00);
             var groupByDate = data
               .GroupBy(s => s.Date.Date).ToList();
 
@@ -55,7 +56,7 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
                         double? previousDayClose = previousDay.FirstOrDefault(s => s.Date.TimeOfDay == previousDayCheck && s.Symbol == item.Key)?.Close;
 
 
-                       // if (openPrice.HasValue == false || previousDayClose.HasValue == false || previousDayClose.Value < 40) continue;
+                        // if (openPrice.HasValue == false || previousDayClose.HasValue == false || previousDayClose.Value < 40) continue;
                         if (previousDayClose.Value < 40) continue;
 
 
@@ -93,10 +94,21 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.implementation
 
                 foreach (var top in topFive)
                 {
+
+                    var sym = new HistoricalDataRequestModel()
+                    {
+                        FromDateTime = top.DateTime.Date,
+                        Symbol = top.Symbol,
+                        TimeFrame = "1",
+                        ToDateTime = top.DateTime.Date
+                    };
+
+                    var minData = _historicalDataPuller.GetHistoricalData(token, sym);
+
                     var currentDay = groupByDate.FirstOrDefault(s => s.Key.Date == top.DateTime.Date)
                          .Where(x => x.Symbol == top.Symbol)
                          .ToList();
-                    var entryPrice = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == entryTime)?.Open;
+                    var entryPrice = minData.FirstOrDefault(s => s.Date.TimeOfDay == entryTime)?.Open;
                     var exitTimePrice = currentDay.FirstOrDefault(s => s.Date.TimeOfDay == endTime)?.Close;
 
 

@@ -10,7 +10,8 @@ namespace Quant.BackTesting.Strategies.FadeTheGap.Interface
         //void GetData(string token);
 
         List<ReportModel> GetStrategyPnl(List<HistoricalDataModel> data,TimeSpan endTime,
-            TimeSpan previousDayCheck);
+            TimeSpan previousDayCheck,
+            string token);
         List<HistoricalDataModel> GetHistoricalDataForFNO(string token,
             DateTime backTestStartDate,
             DateTime backTestEndDate,

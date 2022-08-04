@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="FadeTheGap\implementation\FadeTheGapFlowClass - Copy.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Quant.BackTesting.Model\Quant.BackTesting.Model.csproj" />
     <ProjectReference Include="..\Quant.BackTesting.Service\Quant.BackTesting.Service.csproj" />
   </ItemGroup>
